@@ -6,30 +6,34 @@ const channelUsername = '@BY_SOLiYEV';
 const bot = new TelegramBot(token, { polling: true });
 
 const hazillar = [
-    "Sinfdoshlaringni biriga yaxshi ko'rishingni ayt🥰.",
-    "Ota-onangizga sms orqali yaxshi ko'rishingizni aytip ekran suratini menga tashlang !",
-    "Bitta tasodifiy raqamga telefon qilip 'Men bugun kasal xonadan qochdim' deb ayt 😁.",
-    "Do'stlaringa 'Men bugun yangi ko'z oynak oldim' dep maqtan😎",
-    "O'zing bir hazil o'ylap top va bajar😅"
+    "Do‘stingizga telefon qilib, 'Seni yaxshi ko‘raman' deb ayting 😅",
+    "Biror guruhga 'Men bugun yulduzman ⭐' deb yozing!",
+    "Oilangizga sizni rostdan yaxshi ko‘rishingizni ayting ❤️",
+    "Bitta tasodifiy raqamga sms yozing: 'Bugun omadli kuning!' 📲",
+    "O‘zingiz haqida bir kulgili fakt yozing va menga yuboring 😂",
+    "O‘qituvchingizga rahmat deb sms yozing va skrin yuboring!"
 ];
 
 const jazolar = [
-    "Do‘stlaringizni har biriga musqaymoq olip bering.",
-    "2 daqiqa tizzada turib o‘zingizga kuling.",
-    "10 daqiqa telefonni o‘chirib qo‘ying va sukut saqlang.",
-    "7 kun internetsiz yashang 😎",
-    "2 kun telefonsiz yuring😉"
+    "10 daqiqa telefonni o‘chirib qo‘ying 😐",
+    "Do‘stingizga 'bugun meni kechiring' deb yozing",
+    "Yaqin odamingizga kulib selfi tashlang va menga yuboring 🤳",
+    "Bugun hech kimga dars haqida gapirmang 😂",
+    "3 marta baland ovozda kuling va ovoz yozib yuboring",
+    "Har bir do‘stingizga tabassum yuboring 😊"
 ];
 
 const userLastAction = {};
 const completedUsers = new Set();
-const userCoins = {}; // Coinlar saqlanadi
+const userCoins = {};
 
+// Coin yangilash funksiyasi
 function updateUserCoin(userId, change) {
     if (!userCoins[userId]) userCoins[userId] = 0;
     userCoins[userId] += change;
 }
 
+// Obuna tekshiradi
 async function isUserSubscribed(userId) {
     try {
         const res = await bot.getChatMember(channelUsername, userId);
@@ -55,59 +59,72 @@ bot.onText(/\/start/, async (msg) => {
                 ]
             }
         };
-        await bot.sendMessage(chatId, "Botdan foydalanish uchun avval kanalga obuna bo‘ling 👇", joinButton);
+        await bot.sendMessage(chatId, "Botdan foydalanish uchun kanalga obuna bo‘ling 👇", joinButton);
         return;
     }
 
-    startChallenge(chatId);
-});
-
-// Tanlovni boshlash funksiyasi
-function startChallenge(chatId) {
-    const now = Date.now();
-    const lastAction = userLastAction[chatId] || 0;
-    const diff = now - lastAction;
-
-    if (diff < 2 * 60 * 60 * 1000) {
-        const minsLeft = Math.ceil((1 * 6 * 6 * 100 - diff) / 30000);
-        bot.sendMessage(chatId, `Kechirasiz, siz ${minsLeft} daqiqadan keyin qayta qatnasha olasiz.`);
-        return;
-    }
-
-    const options = {
+    const menu = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: "Hazil tanlayman", callback_data: "hazil" }],
-                [{ text: "Jazo tanlayman", callback_data: "jazo" }],
-                [{ text: "📊 Coin hisobim", callback_data: "my_coins" }]
+                [{ text: "🎭 Hazil", callback_data: "hazil" }],
+                [{ text: "😈 Jazo", callback_data: "jazo" }],
+                [{ text: "💰 Coin hisobim", callback_data: "my_coins" }]
             ]
         }
     };
-    bot.sendMessage(chatId, "Tanlovni tanlang:", options);
-}
 
-// Callbacklarni boshqarish
-bot.on('callback_query', async (callbackQuery) => {
-    const msg = callbackQuery.message;
-    const chatId = callbackQuery.from.id;
-    const data = callbackQuery.data;
+    await bot.sendMessage(chatId, `👋 Salom ${msg.from.first_name}, tanlang:`, menu);
+});
+
+// /coin komandasi
+bot.onText(/\/coin/, (msg) => {
+    const chatId = msg.chat.id;
+    const coins = userCoins[chatId] || 0;
+    bot.sendMessage(chatId, `💰 Sizda hozirda ${coins} coin bor.`);
+});
+
+// /help komandasi
+bot.onText(/\/help/, (msg) => {
+    const helpText = `
+🤖 Botdan foydalanish:
+• 🎭 Hazil yoki 😈 Jazo tanlang
+• ✅ Bajarganingizda coin olasiz
+• ❌ Bajarmasangiz, coin kamayadi
+• 💰 Coin hisobingizni /coin orqali yoki "💰 Coin hisobim" tugmasi bilan bilib olasiz
+⏱ Har 15 daqiqada 1 marta qatnashish mumkin
+📢 Kanalga obuna bo‘lish shart!
+`;
+    bot.sendMessage(msg.chat.id, helpText);
+});
+
+// Callback'lar
+bot.on('callback_query', async (query) => {
+    const chatId = query.from.id;
+    const data = query.data;
 
     if (data === "check_sub") {
         const subscribed = await isUserSubscribed(chatId);
         if (!subscribed) {
-            bot.sendMessage(chatId, "Siz hali kanalga obuna bo‘lmagansiz. Iltimos, obuna bo‘ling va keyin yana urinib ko‘ring.");
-            return;
+            return bot.sendMessage(chatId, "Hali ham obuna emassiz!");
         }
-        startChallenge(chatId);
+        return bot.sendMessage(chatId, "✅ Obuna tasdiqlandi! Endi tanlovda qatnashing.", {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "🎭 Hazil", callback_data: "hazil" }],
+                    [{ text: "😈 Jazo", callback_data: "jazo" }],
+                    [{ text: "💰 Coin hisobim", callback_data: "my_coins" }]
+                ]
+            }
+        });
     }
 
     if (data === "hazil" || data === "jazo") {
         const now = Date.now();
         const lastAction = userLastAction[chatId] || 0;
 
-        if (now - lastAction < 1 * 6 * 6 * 100) {
-            bot.sendMessage(chatId, "Keyingi tanlov uchun bir oz kuting :)");
-            return;
+        if (now - lastAction < 15 * 60 * 1000) {
+            const mins = Math.ceil((15 * 60 * 1000 - (now - lastAction)) / 60000);
+            return bot.sendMessage(chatId, `⏳ Iltimos, ${mins} daqiqadan so‘ng yana urinib ko‘ring.`);
         }
 
         userLastAction[chatId] = now;
@@ -117,34 +134,38 @@ bot.on('callback_query', async (callbackQuery) => {
             ? hazillar[Math.floor(Math.random() * hazillar.length)]
             : jazolar[Math.floor(Math.random() * jazolar.length)];
 
-        const followUpOptions = {
+        return bot.sendMessage(chatId, `🔔 Topshiriq:\n\n${task}`, {
             reply_markup: {
                 inline_keyboard: [
                     [{ text: "✅ Bajardim", callback_data: "done" }],
                     [{ text: "❌ Bajarmadim", callback_data: "not_done" }]
                 ]
             }
-        };
+        });
+    }
 
-        bot.sendMessage(chatId, `Topshiriq:\n${task}`, followUpOptions);
-    } else if (data === "done") {
+    if (data === "done") {
         if (!completedUsers.has(chatId)) {
             completedUsers.add(chatId);
             updateUserCoin(chatId, 1);
-            bot.sendMessage(chatId, `Barakalla!👏 Sizga +1 coin qo‘shildi. Jami: ${userCoins[chatId]} coin.`);
+            return bot.sendMessage(chatId, `✅ Barakalla! Sizga +1 coin berildi.\nJami: ${userCoins[chatId]} coin.`);
         } else {
-            bot.sendMessage(chatId, "Siz allaqachon bajardim tugmasini bosgansiz.");
+            return bot.sendMessage(chatId, "⚠️ Siz allaqachon bu topshiriqni bajargansiz.");
         }
-    } else if (data === "not_done") {
+    }
+
+    if (data === "not_done") {
         if (!completedUsers.has(chatId)) {
             completedUsers.add(chatId);
             updateUserCoin(chatId, -1);
-            bot.sendMessage(chatId, `Ex, Sizdan -1 coin ayrildi. Jami: ${userCoins[chatId]} coin.`);
+            return bot.sendMessage(chatId, `😥 Afsus, sizga -1 coin.\nJami: ${userCoins[chatId]} coin.`);
         } else {
-            bot.sendMessage(chatId, "Nima hazil qilyapsizmi?");
+            return bot.sendMessage(chatId, "🤨 Hazil qilyapsizmi? Allaqachon javob bergansiz.");
         }
-    } else if (data === "my_coins") {
+    }
+
+    if (data === "my_coins") {
         const coins = userCoins[chatId] || 0;
-        bot.sendMessage(chatId, `💰 Sizda hozirda ${coins} coin mavjud.`);
+        return bot.sendMessage(chatId, `💰 Sizda hozirda ${coins} coin mavjud.`);
     }
 });
