@@ -68,7 +68,8 @@ bot.onText(/\/start/, async (msg) => {
             inline_keyboard: [
                 [{ text: "🎭 Hazil", callback_data: "hazil" }],
                 [{ text: "😈 Jazo", callback_data: "jazo" }],
-                [{ text: "💰 Coin hisobim", callback_data: "my_coins" }]
+                [{ text: "💰 Coin hisobim", callback_data: "my_coins" }],
+                [{ text: "🔄 Qayta boshlash", callback_data: "restart" }]
             ]
         }
     };
@@ -112,7 +113,8 @@ bot.on('callback_query', async (query) => {
                 inline_keyboard: [
                     [{ text: "🎭 Hazil", callback_data: "hazil" }],
                     [{ text: "😈 Jazo", callback_data: "jazo" }],
-                    [{ text: "💰 Coin hisobim", callback_data: "my_coins" }]
+                    [{ text: "💰 Coin hisobim", callback_data: "my_coins" }],
+                    [{ text: "🔄 Qayta boshlash", callback_data: "restart" }]
                 ]
             }
         });
@@ -167,5 +169,19 @@ bot.on('callback_query', async (query) => {
     if (data === "my_coins") {
         const coins = userCoins[chatId] || 0;
         return bot.sendMessage(chatId, `💰 Sizda hozirda ${coins} coin mavjud.`);
+    }
+
+    if (data === "restart") {
+        const menu = {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "🎭 Hazil", callback_data: "hazil" }],
+                    [{ text: "😈 Jazo", callback_data: "jazo" }],
+                    [{ text: "💰 Coin hisobim", callback_data: "my_coins" }],
+                    [{ text: "🔄 Qayta boshlash", callback_data: "restart" }]
+                ]
+            }
+        };
+        return bot.sendMessage(chatId, "Qayta boshlash uchun tanlovni tanlang:", menu);
     }
 });
