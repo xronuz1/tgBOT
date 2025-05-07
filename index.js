@@ -1,6 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
 
-// Token va kanal usernameni yozing
 const token = '8085331330:AAFNbYSKtSNBixryL0IT8gPu463-_IM1ylY';
 const channelUsername = '@BY_SOLiYEV';
 
@@ -24,6 +23,12 @@ const jazolar = [
 
 const userLastAction = {};
 const completedUsers = new Set();
+const userCoins = {}; // Coinlar saqlanadi
+
+function updateUserCoin(userId, change) {
+    if (!userCoins[userId]) userCoins[userId] = 0;
+    userCoins[userId] += change;
+}
 
 async function isUserSubscribed(userId) {
     try {
@@ -64,7 +69,7 @@ function startChallenge(chatId) {
     const diff = now - lastAction;
 
     if (diff < 2 * 60 * 60 * 1000) {
-        const minsLeft = Math.ceil((2 * 60 * 60 * 1000 - diff) / 60000);
+        const minsLeft = Math.ceil((1 * 6 * 6 * 100 - diff) / 30000);
         bot.sendMessage(chatId, `Kechirasiz, siz ${minsLeft} daqiqadan keyin qayta qatnasha olasiz.`);
         return;
     }
@@ -73,11 +78,12 @@ function startChallenge(chatId) {
         reply_markup: {
             inline_keyboard: [
                 [{ text: "Hazil tanlayman", callback_data: "hazil" }],
-                [{ text: "Jazo tanlayman", callback_data: "jazo" }]
+                [{ text: "Jazo tanlayman", callback_data: "jazo" }],
+                [{ text: "📊 Coin hisobim", callback_data: "my_coins" }]
             ]
         }
     };
-    bot.sendMessage(chatId, "Bugungi tanlovni tanlang:", options);
+    bot.sendMessage(chatId, "Tanlovni tanlang:", options);
 }
 
 // Callbacklarni boshqarish
@@ -99,8 +105,8 @@ bot.on('callback_query', async (callbackQuery) => {
         const now = Date.now();
         const lastAction = userLastAction[chatId] || 0;
 
-        if (now - lastAction < 2 * 60 * 60 * 1000) {
-            bot.sendMessage(chatId, "Siz 2 soatda faqat bir marta tanlovda qatnasha olasiz.");
+        if (now - lastAction < 1 * 6 * 6 * 100) {
+            bot.sendMessage(chatId, "Keyingi tanlov uchun bir oz kuting :)");
             return;
         }
 
@@ -124,15 +130,21 @@ bot.on('callback_query', async (callbackQuery) => {
     } else if (data === "done") {
         if (!completedUsers.has(chatId)) {
             completedUsers.add(chatId);
-            bot.sendMessage(chatId, "Barakalla! 👏 Siz topshiriqni bajardingiz.");
+            updateUserCoin(chatId, 1);
+            bot.sendMessage(chatId, `Barakalla!👏 Sizga +1 coin qo‘shildi. Jami: ${userCoins[chatId]} coin.`);
         } else {
             bot.sendMessage(chatId, "Siz allaqachon bajardim tugmasini bosgansiz.");
         }
     } else if (data === "not_done") {
         if (!completedUsers.has(chatId)) {
-            bot.sendMessage(chatId, "Mayli, keyingi safar albatta bajararsiz! 😉");
+            completedUsers.add(chatId);
+            updateUserCoin(chatId, -1);
+            bot.sendMessage(chatId, `Ex, Sizdan -1 coin ayrildi. Jami: ${userCoins[chatId]} coin.`);
         } else {
-            bot.sendMessage(chatId, "Siz allaqachon bajardingiz deb belgilagansiz, endi fikringizni o‘zgartirib bo‘lmaydi.");
+            bot.sendMessage(chatId, "Nima hazil qilyapsizmi?");
         }
+    } else if (data === "my_coins") {
+        const coins = userCoins[chatId] || 0;
+        bot.sendMessage(chatId, `💰 Sizda hozirda ${coins} coin mavjud.`);
     }
 });
