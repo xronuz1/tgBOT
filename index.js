@@ -125,7 +125,7 @@ bot.on('callback_query', async (query) => {
         const lastAction = userLastAction[chatId] || 0;
 
         if (now - lastAction < 15 * 60 * 1000) {
-            const mins = Math.ceil((15 * 60 * 1000 - (now - lastAction)) / 60000);
+            const mins = Math.ceil((5 * 60 * 1000 - (now - lastAction)) / 60000);
             return bot.sendMessage(chatId, `⏳ Iltimos, ${mins} daqiqadan so‘ng yana urinib ko‘ring.`);
         }
 
